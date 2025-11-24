@@ -7,10 +7,10 @@ How to run:
 - From the repository root or the DataPlaneService directory (both supported):
   uvicorn main:app --host 0.0.0.0 --port ${PORT:-3001}
 
-- Using helper script (installs dependencies on every run):
+- Using helper script (creates .venv if missing, installs dependencies on every run):
   PORT=3001 ./run.sh
 
-- Using bootstrap script with virtualenv (installs dependencies on every start + preflight check):
+- Using bootstrap script with virtualenv (creates .venv if missing, installs dependencies on every start + preflight check):
   chmod +x bootstrap.sh
   PORT=3001 ./bootstrap.sh
 
@@ -38,4 +38,4 @@ Notes:
 - The application object is exposed in two places to support both run contexts:
   - sda-satellite-link-216445-217126/main.py (repo root)
   - sda-satellite-link-216445-217126/DataPlaneService/main.py (service directory)
-- This ensures `uvicorn main:app` works whether invoked from the repo root or the DataPlaneService folder.
+- All startup paths standardize on running from the service root with `uvicorn main:app`, avoiding `DataPlaneService.`-prefixed imports.

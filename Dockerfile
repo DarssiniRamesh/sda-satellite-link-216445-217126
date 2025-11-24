@@ -24,7 +24,7 @@ RUN chmod +x /app/bootstrap.sh
 ENV PORT=3001
 ENV LOG_LEVEL=INFO
 
-# Expose service port
+# Expose service port (PORT environment variable defaults to 3001)
 EXPOSE 3001
 
 # Use bootstrap entrypoint to guarantee deps/install and preflight check before start
