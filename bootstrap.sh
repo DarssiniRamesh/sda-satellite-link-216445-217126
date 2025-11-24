@@ -12,6 +12,7 @@
 #   PORT=3001 ./bootstrap.sh
 set -eu
 
+# Always operate from the directory containing this script (service root)
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 cd "${SCRIPT_DIR}"
 
