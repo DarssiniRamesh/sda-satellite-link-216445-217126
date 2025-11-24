@@ -1,21 +1,12 @@
 """
 Top-level ASGI entrypoint for DataPlaneService.
 
-This module exposes a FastAPI instance named `app` for ASGI servers (e.g., uvicorn) to import:
-    uvicorn main:app --host 0.0.0.0 --port 3010
+- Exposes `app` imported from src.api.main so `uvicorn main:app` works.
+- When executed directly, runs uvicorn bound to 0.0.0.0 honoring env PORT,
+  defaulting to 3002 per project standard.
 
-It imports the application from the internal package path (src.api.main) and re-exports it.
-It also provides an optional CLI execution path to run with uvicorn while standardizing port handling.
-
-Environment variables:
-    PORT: Preferred listening port. Allowed values: 3000, 3001, 3002, 5000.
-          If unset or invalid, the module falls back to the first available from the allowed set,
-          defaulting to 3000.
-
-Notes:
-- Do not hardcode sensitive values here. Use environment variables or a .env file.
-- This file should remain minimal to avoid diverging from app initialization logic.
-- Security: avoid printing secrets, use logging safely, and bind to 0.0.0.0 for containerized runtime.
+Usage:
+    uvicorn main:app --host 0.0.0.0 --port ${PORT:-3002}
 """
 
 from __future__ import annotations
@@ -33,19 +24,17 @@ app = _inner_app
 __all__ = ["app"]
 
 
-def _select_port_from_env(allowed_ports: list[int]) -> int:
+def _select_port_from_env(allowed_ports: list[int], default_port: int) -> int:
     """
-    Select a listening port using the PORT env var if valid, else choose the first allowed.
-
-    The allowed set is constrained to avoid accidental port sprawl across containers.
+    Select a listening port using the PORT env var if valid, else choose the default.
 
     Args:
         allowed_ports: List of allowed port integers (non-empty).
+        default_port: Default port to use when env is unset/invalid.
 
     Returns:
         Selected port integer.
     """
-    # Validate allowed_ports defensively
     if not allowed_ports or not all(isinstance(p, int) and p > 0 for p in allowed_ports):
         raise ValueError("allowed_ports must be a non-empty list of positive integers")
 
@@ -56,13 +45,14 @@ def _select_port_from_env(allowed_ports: list[int]) -> int:
             if port_candidate in allowed_ports:
                 return port_candidate
             logging.warning(
-                "PORT env value %s is not in allowed set %s; falling back to first allowed.",
+                "PORT env value %s is not in allowed set %s; falling back to default %s.",
                 port_candidate,
                 allowed_ports,
+                default_port,
             )
         except ValueError:
-            logging.warning("Invalid PORT env value '%s'; must be an integer. Falling back.", env_port)
-    return allowed_ports[0]
+            logging.warning("Invalid PORT env value '%s'; must be an integer. Falling back to default.", env_port)
+    return default_port
 
 
 def _determine_port() -> int:
@@ -70,15 +60,14 @@ def _determine_port() -> int:
     Determine the port with the project's standardized allowed set.
 
     Returns:
-        Port selected from allowed set [3000, 3001, 3002, 5000], honoring PORT if valid.
+        Port selected from allowed set [3000, 3001, 3002, 5000], honoring PORT if valid; default 3002.
     """
     allowed: Final[list[int]] = [3000, 3001, 3002, 5000]
-    return _select_port_from_env(allowed)
+    return _select_port_from_env(allowed, default_port=3002)
 
 
 if __name__ == "__main__":
     # Optional: support running via `python main.py` during local development.
-    # Production should use `uvicorn main:app --host 0.0.0.0 --port <port>`
     try:
         import uvicorn  # Local import to avoid mandatory dependency at import time
     except Exception as exc:  # pragma: no cover - import-time failures logged
