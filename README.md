@@ -37,3 +37,8 @@ Health Check and Swagger UI:
 - Liveness: http://localhost:3002/
 - Readiness: http://localhost:3002/health
 - Docs: http://localhost:3002/docs
+- OpenAPI: http://localhost:3002/openapi.json
+
+Preview environment:
+- The preview platform may bind the service to port 3012. This service now honors any valid PORT value.
+- Example for preview: `export PORT=3012 && uvicorn main:app --host 0.0.0.0 --port \"$PORT\"`

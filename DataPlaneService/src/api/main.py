@@ -15,6 +15,8 @@ from typing import Dict, Final
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+import os
 
 # PUBLIC_INTERFACE
 app: Final[FastAPI] = FastAPI(
@@ -32,6 +34,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Log OpenAPI/docs URLs on startup for discoverability in preview/local environments
+_logger = logging.getLogger(__name__)
+
+@app.on_event("startup")
+async def _log_docs_urls() -> None:
+    port = os.getenv("PORT") or "3002"
+    host = "0.0.0.0"
+    try:
+        p = int(port)
+        if not (1 <= p <= 65535):
+            port = "3002"
+    except ValueError:
+        port = "3002"
+    _logger.info("Data Plane Service started")
+    _logger.info("Swagger UI: http://%s:%s/docs", host, port)
+    _logger.info("OpenAPI JSON: http://%s:%s/openapi.json", host, port)
 
 
 # PUBLIC_INTERFACE
