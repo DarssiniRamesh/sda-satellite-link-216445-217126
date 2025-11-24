@@ -15,6 +15,7 @@ Environment variables:
 Notes:
 - Do not hardcode sensitive values here. Use environment variables or a .env file.
 - This file should remain minimal to avoid diverging from app initialization logic.
+- Security: avoid printing secrets, use logging safely, and bind to 0.0.0.0 for containerized runtime.
 """
 
 from __future__ import annotations
