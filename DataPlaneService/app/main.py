@@ -27,7 +27,11 @@ app = FastAPI(
 # PUBLIC_INTERFACE
 @app.get("/", tags=["root"], summary="Root info", description="Returns a simple message indicating the DataPlaneService is running.")
 def root() -> dict:
-    """Root endpoint that provides a simple service status message."""
+    """Root endpoint that provides a simple service status message.
+
+    Returns:
+        dict: A minimal JSON object with service name and status.
+    """
     return {"service": "DataPlaneService", "status": "ok"}
 
 # PUBLIC_INTERFACE
@@ -48,5 +52,9 @@ def root() -> dict:
     },
 )
 def health() -> JSONResponse:
-    """Health endpoint for liveness checking."""
+    """Health endpoint for liveness checking.
+
+    Returns:
+        JSONResponse: JSON payload indicating the service is healthy.
+    """
     return JSONResponse(content={"status": "healthy"}, status_code=200)

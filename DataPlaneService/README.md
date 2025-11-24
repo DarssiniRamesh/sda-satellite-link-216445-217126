@@ -18,5 +18,10 @@ The service will be available at:
 ## Development
 
 - Entry point: `app/main.py`
-- ASGI app path: `app.main:app`
+- ASGI app paths:
+  - Preferred: `app.main:app`
+  - Shim: `main:app` (via root-level main.py)
 - Requirements: see `requirements.txt`
+- Run directly:
+  - `uvicorn app.main:app --host 0.0.0.0 --port 3001`
+  - or `uvicorn main:app --host 0.0.0.0 --port 3001`
