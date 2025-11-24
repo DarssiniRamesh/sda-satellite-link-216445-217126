@@ -22,7 +22,9 @@ app = FastAPI(
         "Manages Ethernet encapsulation as Free Space Optical (FSO) frames, including packing/segmentation, "
         "packet ordering, delivery, and network interface management. Implements the Layer 2 data plane "
         "for the Optical Communications Terminal (OCT) system, supporting bi-directional Ethernet transport "
-        "up to 2.5 Gbps."
+        "up to 2.5 Gbps.\n\n"
+        "WebSocket usage: connect to ws://<host>:3001/telemetry/ws to receive JSON telemetry updates at ~1Hz "
+        "containing throughput, latency, and buffer status. See GET /telemetry/ws-usage for details."
     ),
     version="0.2.0",
     openapi_tags=[
@@ -32,7 +34,10 @@ app = FastAPI(
         {"name": "segmentation", "description": "Reassembly and segmentation controls."},
         {"name": "stats", "description": "Throughput, latency, and buffer statistics."},
         {"name": "buffers", "description": "RX/TX buffer interactions."},
-        {"name": "telemetry", "description": "Telemetry and WebSocket streaming."},
+        {
+            "name": "telemetry",
+            "description": "Telemetry and WebSocket streaming. WebSocket endpoint: /telemetry/ws",
+        },
     ],
 )
 
@@ -45,7 +50,13 @@ app.add_middleware(
 )
 
 # PUBLIC_INTERFACE
-@app.get("/", tags=["root"], summary="Root info", description="Returns a simple message indicating the DataPlaneService is running.")
+@app.get(
+    "/",
+    tags=["root"],
+    summary="Root info",
+    description="Returns a simple message indicating the DataPlaneService is running.",
+    responses={200: {"description": "Service root", "content": {"application/json": {"example": {"service": "DataPlaneService", "status": "ok"}}}}},
+)
 def root() -> dict:
     """Root endpoint that provides a simple service status message.
 

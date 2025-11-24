@@ -21,7 +21,7 @@ def get_service() -> EncapsulationService:
     "/rx/push",
     summary="Push received segment",
     description="Push a received segment from lower layers into the RX queue and reassembly buffers.",
-    responses={202: {"description": "Accepted"}},
+    responses={202: {"description": "Accepted"}, 400: {"description": "Invalid segment"}},
     status_code=202,
 )
 def push_rx(seg: EncapsulatedSegment, svc: EncapsulationService = Depends(get_service)) -> dict:

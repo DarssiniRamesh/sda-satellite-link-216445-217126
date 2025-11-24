@@ -14,6 +14,21 @@ chmod +x run.sh
 The service will be available at:
 - http://localhost:3001/           (root)
 - http://localhost:3001/health     (health)
+- http://localhost:3001/docs       (OpenAPI docs)
+- http://localhost:3001/openapi.json
+
+WebSocket usage:
+- ws://localhost:3001/telemetry/ws (see GET /telemetry/ws-usage)
+
+### Quick self-check (no server)
+
+Run a quick import/startup check:
+
+```bash
+python -c "import app.selfcheck as sc; print(sc.run_self_check())"
+```
+
+You should see all expected router prefixes present and tag names listed.
 
 ## Development
 

@@ -221,10 +221,16 @@ class EncapsulationService:
             one_sec_ns = 1_000_000_000
             cutoff = now_ns - one_sec_ns
             bytes_sum = 0
+            # prune old entries to keep deque fresh
+            fresh: Deque[Tuple[int, int]] = deque(maxlen=window.maxlen)
             for ts, b in list(window):
                 if ts >= cutoff:
                     bytes_sum += b
-            return float(bytes_sum * 8)  # bits per last second
+                    fresh.append((ts, b))
+            # replace content with pruned values (thread-safe enough as called under stats read; minor races acceptable)
+            window.clear()
+            window.extend(fresh)
+            return float(bytes_sum * 8)  # bits in last second
 
         tx_bps = calc_bps(self._tx_bytes_window)
         rx_bps = calc_bps(self._rx_bytes_window)

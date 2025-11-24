@@ -45,6 +45,11 @@ def get_service() -> EncapsulationService:
 )
 def pack(req: EncapsulationRequest, svc: EncapsulationService = Depends(get_service)) -> EncapsulationResponse:
     """Encapsulate an Ethernet frame into FSO segments."""
+    # Basic sanity checks before heavy processing
+    if not req.ethernet_frame_hex or len(req.ethernet_frame_hex) % 2 != 0:
+        raise HTTPException(status_code=400, detail="ethernet_frame_hex must be non-empty even-length hex")
+    if req.max_segment_size < 256 or req.max_segment_size > 9216:
+        raise HTTPException(status_code=400, detail="max_segment_size must be within 256..9216")
     try:
         return svc.encapsulate(req)
     except ValueError as exc:

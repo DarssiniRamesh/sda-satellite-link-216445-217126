@@ -25,6 +25,10 @@ def get_service() -> EncapsulationService:
     response_model=ReassemblyResponse,
     summary="Reassemble Ethernet frame",
     description="Reassembles a full Ethernet frame from provided FSO segments. Returns status 'complete' or 'partial' with missing indices.",
+    responses={
+        200: {"description": "Reassembly result"},
+        400: {"description": "Invalid request"},
+    },
 )
 def reassemble(req: ReassemblyRequest, svc: EncapsulationService = Depends(get_service)) -> ReassemblyResponse:
     """Reassemble Ethernet frame from segments."""

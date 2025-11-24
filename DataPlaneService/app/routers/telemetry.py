@@ -40,16 +40,20 @@ def ws_usage() -> JSONResponse:
 )
 async def telemetry_ws(websocket: WebSocket, svc: EncapsulationService = Depends(get_service)) -> None:
     """
-    WebSocket endpoint that streams JSON telemetry:
-    {
-      "tx_bps": <float>,
-      "rx_bps": <float>,
-      "avg_latency_ms": <float>,
-      "samples": <int>,
-      "tx_queue_depth": <int>,
-      "rx_queue_depth": <int>,
-      "reassembly_sessions": <int>
-    }
+    WebSocket endpoint that streams JSON telemetry once per second.
+
+    Usage notes:
+    - Connect via ws://<host>/telemetry/ws
+    - Payload schema:
+      {
+        "tx_bps": float,
+        "rx_bps": float,
+        "avg_latency_ms": float,
+        "samples": int,
+        "tx_queue_depth": int,
+        "rx_queue_depth": int,
+        "reassembly_sessions": int
+      }
     """
     await websocket.accept()
     try:
