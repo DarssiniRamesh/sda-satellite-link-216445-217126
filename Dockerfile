@@ -4,23 +4,25 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Set workdir
+# Set workdir at service root so uvicorn can import main:app directly
 WORKDIR /app
 
-# Install system deps if needed (none required now)
-# Copy requirements and install
+# Copy only requirements first to leverage Docker layer caching
 COPY requirements.txt /app/requirements.txt
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy source
+# Copy source code
 COPY . /app
 
-# Default environment
+# Set default environment
 ENV PORT=3001
 ENV LOG_LEVEL=INFO
 
-# Expose port
+# Expose service port
 EXPOSE 3001
 
-# Run using uvicorn without requiring venv activation
+# Ensure we run from the service root so 'uvicorn main:app' finds /app/main.py
+# No need to modify PYTHONPATH because /app is the working directory
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
