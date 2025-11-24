@@ -24,6 +24,10 @@ app: Final[FastAPI] = FastAPI(
     version="0.1.0",
     description="Manages Ethernet encapsulation and data plane functions for the OCT system.",
     openapi_tags=[{"name": "Health", "description": "Service health and readiness"}],
+    # Explicitly enable default documentation endpoints
+    docs_url="/docs",
+    redoc_url=None,
+    openapi_url="/openapi.json",
 )
 
 # Configure CORS. Consider restricting allow_origins in production.
