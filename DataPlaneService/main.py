@@ -19,6 +19,7 @@ from src.api.main import app as _inner_app  # Import the actual FastAPI app
 
 # Re-export the FastAPI app for ASGI servers
 app = _inner_app
+"""FastAPI app instance re-exported for uvicorn entrypoint (main:app)."""
 
 # Limit exported symbols to 'app' for clarity and tooling that inspects __all__
 __all__ = ["app"]

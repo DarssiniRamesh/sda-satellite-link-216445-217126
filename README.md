@@ -34,5 +34,6 @@ cp DataPlaneService/.env.example DataPlaneService/.env
 ```
 
 Health Check and Swagger UI:
-- Health: http://localhost:3002/
+- Liveness: http://localhost:3002/
+- Readiness: http://localhost:3002/health
 - Docs: http://localhost:3002/docs
