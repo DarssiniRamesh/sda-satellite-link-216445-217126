@@ -12,6 +12,7 @@ from __future__ import annotations
 import binascii
 import logging
 import time
+import math
 from collections import deque, defaultdict
 from dataclasses import dataclass, field
 from threading import Lock
@@ -73,6 +74,11 @@ class EncapsulationService:
             logger.warning("Invalid ethernet_frame_hex: %s", exc)
             raise ValueError("ethernet_frame_hex must be valid hex") from exc
 
+        # REQ-DP-MTU: enforce MTU/frame bounds (64..9216 bytes typical for jumbo)
+        if not (64 <= len(payload) <= 9216):
+            raise ValueError("REQ-DP-MTU: ethernet frame length must be within 64..9216 bytes")
+
+
         policy = SegmentationPolicy(
             max_segment_size=req.max_segment_size,
             include_crc32=True,
@@ -80,14 +86,16 @@ class EncapsulationService:
             fec_scheme=req.fec_scheme,
         )
         seg_size = policy.normalized_size()
+        if seg_size <= 0 or seg_size > 9216:
+            raise ValueError("REQ-DP-SEG: invalid segment size after normalization")
 
         with self._lock:
             seq = self._seq_counter
             self._seq_counter += 1
 
-        total_segments = (len(payload) + seg_size - 1) // seg_size or 1
+        total_segments = max(1, math.ceil(len(payload) / seg_size))
         segments: List[EncapsulatedSegment] = []
-        now_ns = time.time_ns()
+        now_ns = time.monotonic_ns()
 
         for idx in range(total_segments):
             start = idx * seg_size
@@ -143,7 +151,7 @@ class EncapsulationService:
 
         with self._lock:
             self._rx_queue.append(seg)
-            self._rx_bytes_window.append((time.time_ns(), len(chunk)))
+            self._rx_bytes_window.append((time.monotonic_ns(), len(chunk)))
 
             state = self._reassembly.get(seg.header.seq)
             if state is None:
@@ -153,7 +161,8 @@ class EncapsulationService:
 
             # Latency estimate if TX timestamp present
             if seg.header.timestamp_ns:
-                self._latency_samples_ns.append(max(0, time.time_ns() - seg.header.timestamp_ns))
+                # origin timestamp may be wall clock; use non-negative clamp
+                self._latency_samples_ns.append(max(0, time.monotonic_ns() - seg.header.timestamp_ns))
 
     # PUBLIC_INTERFACE
     def reassemble(self, req: ReassemblyRequest) -> ReassemblyResponse:
@@ -165,6 +174,12 @@ class EncapsulationService:
         seq_ids = {s.header.seq for s in req.segments}
         # For simplicity, if multiple seq seen, reassemble each; return first completed
         with self._lock:
+            # timeout handling: purge sessions older than 2s since first segment
+            now_ns = time.monotonic_ns()
+            expired = [k for k, st in self._reassembly.items() if now_ns - st.created_ns > 2_000_000_000]
+            for k in expired:
+                del self._reassembly[k]
+
             for seq in sorted(seq_ids):
                 state = self._reassembly.get(seq)
                 if not state:
@@ -212,7 +227,7 @@ class EncapsulationService:
     # PUBLIC_INTERFACE
     def throughput_latency(self) -> Tuple[float, float, float, int]:
         """Compute approximate TX/RX throughput and avg latency (ms)."""
-        now_ns = time.time_ns()
+        now_ns = time.monotonic_ns()
 
         def calc_bps(window: Deque[Tuple[int, int]]) -> float:
             if not window:
