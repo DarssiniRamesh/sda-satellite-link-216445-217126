@@ -1,5 +1,18 @@
-from fastapi import FastAPI
+from __future__ import annotations
+
+import logging
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
+from .routers import encapsulation as encapsulation_router
+from .routers import segmentation as segmentation_router
+from .routers import stats as stats_router
+from .routers import buffers as buffers_router
+from .routers import telemetry as telemetry_router
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("DataPlaneService")
 
 # Initialize FastAPI application with metadata and tags for documentation
 app = FastAPI(
@@ -11,17 +24,24 @@ app = FastAPI(
         "for the Optical Communications Terminal (OCT) system, supporting bi-directional Ethernet transport "
         "up to 2.5 Gbps."
     ),
-    version="0.1.0",
+    version="0.2.0",
     openapi_tags=[
-        {
-            "name": "health",
-            "description": "Service health and readiness probes.",
-        },
-        {
-            "name": "root",
-            "description": "Root informational endpoints.",
-        },
+        {"name": "health", "description": "Service health and readiness probes."},
+        {"name": "root", "description": "Root informational endpoints."},
+        {"name": "encapsulation", "description": "Ethernet-to-FSO encapsulation operations."},
+        {"name": "segmentation", "description": "Reassembly and segmentation controls."},
+        {"name": "stats", "description": "Throughput, latency, and buffer statistics."},
+        {"name": "buffers", "description": "RX/TX buffer interactions."},
+        {"name": "telemetry", "description": "Telemetry and WebSocket streaming."},
     ],
+)
+
+# Allow CORS for local dev/testing. In production, restrict origins.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 # PUBLIC_INTERFACE
@@ -43,11 +63,7 @@ def root() -> dict:
     responses={
         200: {
             "description": "Service is healthy",
-            "content": {
-                "application/json": {
-                    "example": {"status": "healthy"}
-                }
-            },
+            "content": {"application/json": {"example": {"status": "healthy"}}},
         }
     },
 )
@@ -58,3 +74,18 @@ def health() -> JSONResponse:
         JSONResponse: JSON payload indicating the service is healthy.
     """
     return JSONResponse(content={"status": "healthy"}, status_code=200)
+
+
+# Register routers
+app.include_router(encapsulation_router.router)
+app.include_router(segmentation_router.router)
+app.include_router(stats_router.router)
+app.include_router(buffers_router.router)
+app.include_router(telemetry_router.router)
+
+
+# Global error handler to avoid leaking internals
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error("Unhandled error at %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(status_code=500, content={"error": "internal_error", "message": "An internal error occurred."})
