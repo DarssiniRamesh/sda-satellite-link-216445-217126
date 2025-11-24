@@ -9,6 +9,7 @@ It imports the app from the DataPlaneService package.
 
 from DataPlaneService.app.main import app  # noqa: F401
 
+
 # PUBLIC_INTERFACE
 def get_app():
     """Return the FastAPI application instance for programmatic use."""
