@@ -13,43 +13,51 @@ import importlib
 import os
 import sys
 from types import ModuleType
-from typing import Any
+from typing import Any, Optional
 
-# Attempt 1: Absolute import via package path from repository root
-#   sda-satellite-link-217126/DataPlaneService/app/main.py -> DataPlaneService.app.main:app
+# Import resolution strategy:
+# 1) Try local package import when CWD is the service folder: from app.main import app
+# 2) Try absolute package import: from DataPlaneService.app.main import app
+# 3) If that fails, prepend parent directory to sys.path and retry the absolute import
+# 4) As a final fallback, use importlib to attempt both variants explicitly
+
+app: Any  # will be bound by one of the branches below
+
+# Attempt 1: When uvicorn is launched from DataPlaneService/ (CWD=service folder)
 try:
-    from DataPlaneService.app.main import app  # type: ignore  # noqa: F401
+    from app.main import app as _app  # type: ignore
+    app = _app
 except Exception:
-    # Attempt 2: Relative import when CWD is the DataPlaneService directory and it's a package
+    # Attempt 2: Absolute import (works when repo root is on PYTHONPATH)
     try:
-        from app.main import app  # type: ignore  # noqa: F401
+        from DataPlaneService.app.main import app as _app  # type: ignore
+        app = _app
     except Exception:
-        # Attempt 3: Adjust sys.path to include the parent directory of DataPlaneService
-        # so that 'DataPlaneService.app.main' becomes importable.
+        # Attempt 3: Ensure parent of this file (repo root) is on sys.path, then retry absolute import
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
         if parent_dir not in sys.path:
             sys.path.insert(0, parent_dir)
-        # Retry absolute import after path fix
         try:
-            from DataPlaneService.app.main import app  # type: ignore  # noqa: F401
+            from DataPlaneService.app.main import app as _app  # type: ignore
+            app = _app
         except Exception as e:
-            # As a last resort, try dynamic import using importlib with both variants
-            app: Any | None = None
-            for mod_name in ("DataPlaneService.app.main", "app.main"):
+            # Attempt 4: Dynamic import tries both names explicitly
+            resolved_app: Optional[Any] = None
+            for mod_name in ("app.main", "DataPlaneService.app.main"):
                 try:
                     mod: ModuleType = importlib.import_module(mod_name)
                     if hasattr(mod, "app"):
-                        app = getattr(mod, "app")
+                        resolved_app = getattr(mod, "app")
                         break
                 except Exception:
                     continue
-            if app is None:
-                # Provide a clear error to aid debugging in CI logs
+            if resolved_app is None:
                 raise ImportError(
-                    "Unable to import FastAPI application 'app'. Tried "
-                    "'DataPlaneService.app.main' and 'app.main', with sys.path parent fallback."
+                    "Unable to import FastAPI application 'app'. Tried 'app.main' and "
+                    "'DataPlaneService.app.main', including sys.path parent fallback."
                 ) from e
+            app = resolved_app
 
 
 # PUBLIC_INTERFACE
