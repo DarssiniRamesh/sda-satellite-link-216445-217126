@@ -14,8 +14,11 @@ COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --upgrade pip && \
     pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy source code
+# Copy the rest of the source
 COPY . /app
+
+# Ensure bootstrap is executable
+RUN chmod +x /app/bootstrap.sh
 
 # Set default environment
 ENV PORT=3001
@@ -24,6 +27,5 @@ ENV LOG_LEVEL=INFO
 # Expose service port
 EXPOSE 3001
 
-# Ensure we run from the service root so 'uvicorn main:app' finds /app/main.py
-# No need to modify PYTHONPATH because /app is the working directory
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
+# Use bootstrap entrypoint to guarantee deps/install and preflight check before start
+ENTRYPOINT ["/app/bootstrap.sh"]

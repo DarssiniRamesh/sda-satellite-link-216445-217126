@@ -4,27 +4,26 @@ This repository contains the Data Plane Service for the OCT system. It is a Fast
 
 How to run:
 
-- From the repository root (standardized entrypoint):
+- From the repository root or the DataPlaneService directory (both supported):
   uvicorn main:app --host 0.0.0.0 --port ${PORT:-3001}
 
-- From the DataPlaneService directory (this is how the preview runs):
-  cd DataPlaneService
-  uvicorn main:app --host 0.0.0.0 --port ${PORT:-3001}
-
-- Using helper script:
+- Using helper script (installs dependencies on every run):
   PORT=3001 ./run.sh
 
-- Using bootstrap script with virtualenv (preview/dev):
+- Using bootstrap script with virtualenv (installs dependencies on every start + preflight check):
   chmod +x bootstrap.sh
   PORT=3001 ./bootstrap.sh
 
-- Using Docker:
+- Using Docker (bootstrap is the container entrypoint):
   docker build -t dataplane:latest .
   docker run -e PORT=3001 -p 3001:3001 dataplane:latest
 
 Environment:
-- Optional .env file at repo root (same directory as this README) for settings such as PORT, LOG_LEVEL, and APP_VERSION.
-- PORT defaults to 3001 if not set. The Docker image, bootstrap.sh, and run.sh use ${PORT} when provided, otherwise default.
+- Optional .env file at the service root (same directory as this README) for settings such as PORT, LOG_LEVEL, and APP_VERSION.
+- PORT defaults to 3001 if not set. You can override the port by setting the PORT environment variable:
+  - Example: PORT=8080 ./run.sh
+  - Example: PORT=8080 ./bootstrap.sh
+  - Example: docker run -e PORT=8080 -p 8080:8080 dataplane:latest
 
 Endpoints:
 - GET /healthz   -> 200 {"status":"ok"}
