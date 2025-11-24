@@ -6,12 +6,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..models.frame_spec import EncapsulatedSegment
-from ..services.encapsulation_service import EncapsulationService
+# Do not import or annotate with EncapsulationService to prevent Pydantic schema generation attempts.
 
 router = APIRouter(prefix="/buffers", tags=["buffers"])
 
 
-def get_service() -> EncapsulationService:
+def get_service():
     from ..state import get_encapsulation_service
     return get_encapsulation_service()
 
@@ -24,7 +24,7 @@ def get_service() -> EncapsulationService:
     responses={202: {"description": "Accepted"}, 400: {"description": "Invalid segment"}},
     status_code=202,
 )
-def push_rx(seg: EncapsulatedSegment, svc: EncapsulationService = Depends(get_service)) -> dict:
+def push_rx(seg: EncapsulatedSegment, svc = Depends(get_service)) -> dict:
     """Push a received segment into RX queue."""
     try:
         svc.accept_rx_segment(seg)

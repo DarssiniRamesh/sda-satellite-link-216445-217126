@@ -9,12 +9,12 @@ from ..models.frame_spec import (
     ReassemblyRequest,
     ReassemblyResponse,
 )
-from ..services.encapsulation_service import EncapsulationService
+# Avoid importing EncapsulationService to prevent schema generation on service classes.
 
 router = APIRouter(prefix="/segmentation", tags=["segmentation"])
 
 
-def get_service() -> EncapsulationService:
+def get_service():
     from ..state import get_encapsulation_service
     return get_encapsulation_service()
 
@@ -30,7 +30,7 @@ def get_service() -> EncapsulationService:
         400: {"description": "Invalid request"},
     },
 )
-def reassemble(req: ReassemblyRequest, svc: EncapsulationService = Depends(get_service)) -> ReassemblyResponse:
+def reassemble(req: ReassemblyRequest, svc = Depends(get_service)) -> ReassemblyResponse:
     """Reassemble Ethernet frame from segments."""
     if not req.segments:
         raise HTTPException(status_code=400, detail="segments array must not be empty")

@@ -6,12 +6,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from ..models.frame_spec import ThroughputLatencyStats, BufferStatus, TelemetryOverview
-from ..services.encapsulation_service import EncapsulationService
+# Avoid importing EncapsulationService to keep it out of OpenAPI schema generation paths.
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
 
-def get_service() -> EncapsulationService:
+def get_service():
     from ..state import get_encapsulation_service
     return get_encapsulation_service()
 
@@ -23,7 +23,7 @@ def get_service() -> EncapsulationService:
     summary="Get throughput and latency",
     description="Returns approximate TX/RX throughput (bps) and average latency (ms) based on in-memory samples.",
 )
-def get_throughput(svc: EncapsulationService = Depends(get_service)) -> ThroughputLatencyStats:
+def get_throughput(svc = Depends(get_service)) -> ThroughputLatencyStats:
     """Return approximate throughput and latency stats."""
     tx_bps, rx_bps, avg_lat_ms, samples = svc.throughput_latency()
     return ThroughputLatencyStats(tx_bps=tx_bps, rx_bps=rx_bps, avg_latency_ms=avg_lat_ms, samples=samples)
@@ -36,7 +36,7 @@ def get_throughput(svc: EncapsulationService = Depends(get_service)) -> Throughp
     summary="Get buffer status",
     description="Returns depths of TX/RX queues and number of active reassembly sessions.",
 )
-def get_buffers(svc: EncapsulationService = Depends(get_service)) -> BufferStatus:
+def get_buffers(svc = Depends(get_service)) -> BufferStatus:
     """Return buffer depths and reassembly session count."""
     tx, rx, sessions = svc.buffer_status()
     return BufferStatus(tx_queue_depth=tx, rx_queue_depth=rx, reassembly_sessions=sessions)
@@ -49,7 +49,7 @@ def get_buffers(svc: EncapsulationService = Depends(get_service)) -> BufferStatu
     summary="Get CRC/FEC/ARQ telemetry",
     description="Returns counters for CRC errors, FEC corrections, and ARQ retransmissions. Values are stubs for now.",
 )
-def get_telemetry(svc: EncapsulationService = Depends(get_service)) -> TelemetryOverview:
+def get_telemetry(svc = Depends(get_service)) -> TelemetryOverview:
     """Return telemetry counters. CRC/FEC/ARQ are stubs until integrated."""
     crc, fec, arq = svc.telemetry_counters()
     return TelemetryOverview(

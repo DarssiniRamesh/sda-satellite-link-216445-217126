@@ -8,12 +8,12 @@ import json
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import JSONResponse
 
-from ..services.encapsulation_service import EncapsulationService
+# Avoid importing EncapsulationService to prevent it from appearing in schema generation analysis.
 
 router = APIRouter(prefix="/telemetry", tags=["telemetry"])
 
 
-def get_service() -> EncapsulationService:
+def get_service():
     from ..state import get_encapsulation_service
     return get_encapsulation_service()
 
@@ -38,7 +38,7 @@ def ws_usage() -> JSONResponse:
 @router.websocket(
     "/ws"
 )
-async def telemetry_ws(websocket: WebSocket, svc: EncapsulationService = Depends(get_service)) -> None:
+async def telemetry_ws(websocket: WebSocket, svc = Depends(get_service)) -> None:
     """
     WebSocket endpoint that streams JSON telemetry once per second.
 

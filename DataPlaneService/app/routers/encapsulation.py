@@ -14,7 +14,8 @@ from ..models.frame_spec import (
     EncapsulationResponse,
     EncapsulatedSegment,
 )
-from ..services.encapsulation_service import EncapsulationService
+# Avoid importing EncapsulationService here to prevent Pydantic/OpenAPI from attempting to generate a schema for it.
+# Use Depends(get_service) with untyped parameter to keep DI while excluding it from schema generation.
 
 
 router = APIRouter(prefix="/encapsulation", tags=["encapsulation"])
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/encapsulation", tags=["encapsulation"])
 # This avoids including arbitrary service types in OpenAPI/Pydantic schemas.
 
 
-def get_service() -> EncapsulationService:
+def get_service():
     # In a production system, this would come from app state or DI container.
     from ..state import get_encapsulation_service
     return get_encapsulation_service()
@@ -43,7 +44,7 @@ def get_service() -> EncapsulationService:
         500: {"description": "Internal error"},
     },
 )
-def pack(req: EncapsulationRequest, svc: EncapsulationService = Depends(get_service)) -> EncapsulationResponse:
+def pack(req: EncapsulationRequest, svc = Depends(get_service)) -> EncapsulationResponse:
     """Encapsulate an Ethernet frame into FSO segments."""
     # Basic sanity checks before heavy processing
     if not req.ethernet_frame_hex or len(req.ethernet_frame_hex) % 2 != 0:
@@ -63,7 +64,7 @@ def pack(req: EncapsulationRequest, svc: EncapsulationService = Depends(get_serv
     summary="Dequeue TX segments",
     description="Returns up to N pending segments queued for transmit.",
 )
-def tx_dequeue(n: int = 10, svc: EncapsulationService = Depends(get_service)) -> list[EncapsulatedSegment]:
+def tx_dequeue(n: int = 10, svc = Depends(get_service)) -> list[EncapsulatedSegment]:
     """Dequeue up to n segments from TX queue."""
     if n <= 0 or n > 1000:
         raise HTTPException(status_code=400, detail="n must be in 1..1000")
@@ -77,7 +78,7 @@ def tx_dequeue(n: int = 10, svc: EncapsulationService = Depends(get_service)) ->
     summary="Dequeue RX segments",
     description="Returns up to N received segments queued from the receiver side.",
 )
-def rx_dequeue(n: int = 10, svc: EncapsulationService = Depends(get_service)) -> list[EncapsulatedSegment]:
+def rx_dequeue(n: int = 10, svc = Depends(get_service)) -> list[EncapsulatedSegment]:
     """Dequeue up to n segments from RX queue."""
     if n <= 0 or n > 1000:
         raise HTTPException(status_code=400, detail="n must be in 1..1000")
