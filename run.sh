@@ -18,9 +18,12 @@ PORT="${PORT:-3001}"
 HOST="${HOST:-0.0.0.0}"
 LOG_LEVEL="${LOG_LEVEL:-info}"
 
+PYBIN="python"
+command -v "${PYBIN}" >/dev/null 2>&1 || PYBIN="python3"
+
 need_install=0
 command -v uvicorn >/dev/null 2>&1 || need_install=1
-python - <<'PYCHK' || need_install=1
+"$PYBIN" - <<'PYCHK' || need_install=1
 try:
     import fastapi, pydantic, dotenv  # type: ignore
 except Exception:
@@ -29,7 +32,7 @@ PYCHK
 
 if [ "${need_install}" -eq 1 ]; then
   echo "Installing Python dependencies from requirements.txt ..."
-  python -m pip install --upgrade pip >/dev/null 2>&1 || true
+  "$PYBIN" -m pip install --upgrade pip >/dev/null 2>&1 || true
   pip install --no-cache-dir -r requirements.txt
 fi
 
