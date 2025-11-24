@@ -20,9 +20,9 @@ from ..services.encapsulation_service import EncapsulationService
 router = APIRouter(prefix="/encapsulation", tags=["encapsulation"])
 
 
-class ServiceProvider(BaseModel):
-    """Simple provider for dependency injection."""
-    svc: EncapsulationService
+# Note: Do not wrap service instances inside Pydantic models. FastAPI dependency
+# injection via Depends(get_service) is used to provide the EncapsulationService.
+# This avoids including arbitrary service types in OpenAPI/Pydantic schemas.
 
 
 def get_service() -> EncapsulationService:
