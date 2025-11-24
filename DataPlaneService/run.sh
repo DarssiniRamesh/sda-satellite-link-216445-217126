@@ -6,6 +6,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Load environment variables from .env if present (non-strict)
+if [ -f "${SCRIPT_DIR}/.env" ]; then
+  # shellcheck disable=SC2046
+  export $(grep -v '^#' "${SCRIPT_DIR}/.env" | xargs -I {} echo {})
+fi
+
+# Default port is 3001 if not provided
+PORT="${PORT:-3001}"
+
 # Install dependencies if uvicorn is not available
 if ! command -v uvicorn >/dev/null 2>&1; then
   echo "[run.sh] uvicorn not found. Installing dependencies..."
@@ -27,6 +36,7 @@ else
   fi
 fi
 
-# Start uvicorn with correct module path app.main:app on port 3001
+echo "[run.sh] Starting DataPlaneService on port ${PORT}"
+# Start uvicorn with correct module path app.main:app on configured port
 # Bind to 0.0.0.0 to be reachable in container
-exec uvicorn app.main:app --host 0.0.0.0 --port 3001
+exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT}"
